@@ -1,0 +1,39 @@
+name: openapi
+
+# Cada cambio propuesto (pull request) y cada push a la rama principal.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# El trabajo solo lee el repositorio y ejecuta un script; no escribe en GitHub.
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: openapi:check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Instalar dependencias del backend
+        run: npm ci
+
+      - name: Preparar entorno
+        # El arranque valida las variables de entorno; openapi:check no toca la
+        # base de datos, así que no hace falta migrar.
+        run: cp .env.example .env && node ace generate:key
+
+      - name: Comprobar que docs/api/openapi.json está al día
+        run: npm run openapi:check
