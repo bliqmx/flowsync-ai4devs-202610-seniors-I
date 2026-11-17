@@ -1,0 +1,57 @@
+name: revisor
+
+# Un revisor de código sobre cada cambio propuesto (pull request).
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+# Lo mínimo: leer el repositorio (checkout + Read/Grep/Glob) y escribir
+# comentarios en el pull request. Nada de escribir en el código ni permisos extra.
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    name: Revisión de código con Claude
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          # Credencial desde un secreto del repositorio. Camino de suscripción
+          # (token de `claude setup-token`). Para usar la clave de API en su
+          # lugar, ver docs/ci-revisor.md: NO son intercambiables.
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            Eres un revisor de código. Revisa los cambios propuestos en este pull request.
+
+            REPO: ${{ github.repository }}
+            PR: ${{ github.event.pull_request.number }}
+
+            Antes de juzgar, abre el archivo de calibración del repositorio
+            (CLAUDE.md y las convenciones o specs que referencie) para revisar
+            según las reglas del proyecto, y abre los archivos tocados por el
+            cambio para ver el contexto completo, no solo el diff.
+
+            No redirijas la salida de ningún comando a ficheros: lee la salida
+            directamente.
+
+            Publica los hallazgos como comentarios en el pull request, no solo
+            en el registro de ejecución:
+            - Usa `gh pr comment` para el comentario de resumen.
+            - Usa `mcp__github_inline_comment__create_inline_comment` (con
+              `confirmed: true`) para señalar problemas en líneas concretas.
+            - Publica solo comentarios de GitHub; no dejes la revisión como
+              mensajes del log.
+          # Modelo económico y techo de trabajo/coste. Read, Grep y Glob son
+          # imprescindibles: sin ellos el revisor no puede abrir el archivo de
+          # calibración ni los archivos del cambio, y cada intento denegado le
+          # cuesta un turno.
+          claude_args: |
+            --model sonnet
+            --effort medium
+            --max-turns 40
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Read,Grep,Glob"
