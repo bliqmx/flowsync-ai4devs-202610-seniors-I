@@ -31,10 +31,13 @@ jobs:
             REPO: ${{ github.repository }}
             PR: ${{ github.event.pull_request.number }}
 
-            Antes de juzgar, abre el archivo de calibración del repositorio
-            (CLAUDE.md y las convenciones o specs que referencie) para revisar
-            según las reglas del proyecto, y abre los archivos tocados por el
-            cambio para ver el contexto completo, no solo el diff.
+            Antes de revisar el código, abre y lee `REVISIONES.md` (en la raíz
+            del repositorio): es tu archivo de calibración. Aplica sus reglas en
+            toda la revisión —qué cuenta como grave y qué no pasa de sugerencia,
+            el tope de sugerencias menores, dónde NO debes reportar y la
+            exigencia de citar `archivo:línea`— y contrasta el comportamiento
+            contra los scenarios de `openspec/specs/`. Abre también los archivos
+            tocados por el cambio para ver el contexto completo, no solo el diff.
 
             No redirijas la salida de ningún comando a ficheros: lee la salida
             directamente.
